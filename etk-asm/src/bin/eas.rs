@@ -68,7 +68,7 @@ fn run() -> Result<(), Error> {
     // Create an output file handle to write the data to. If the user
     // did not specify an output file, use standard output.
     let mut out: Box<dyn Write> = match o {
-        Some(o) => Box::new(create(o)),
+        Some(o) => Box::new(create(o.to_path_buf())),
         None => Box::new(std::io::stdout()),
     };
 
