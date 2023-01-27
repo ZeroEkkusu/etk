@@ -47,36 +47,20 @@ fn run() -> Result<(), Error> {
     // Check if the output file already exists.
     let mut out_file_exists = false;
     let mut out_file_content = vec![];
-    let mut non_existing_directories = vec![];
-    let o = opt.out.as_ref();
-    if let Some(o) = o {
+    if let Some(o) = &opt.out {
         if Path::new(o).exists() {
             out_file_exists = true;
             match std::fs::read(o) {
                 Ok(content) => out_file_content = content,
                 Err(e) => panic!("couldn't backup existing file: {}", e),
             }            
-        } else {
-            let mut path = Path::new(o);
-            while !path.exists() {
-                non_existing_directories.push(path);
-                let mut path = Path::new(o);
-                while !path.exists() {
-                    non_existing_directories.push(path);
-                    if let Some(p) = path.parent() {
-                        path = p;
-                    } else {
-                        break;
-                    }
-                }                
-            }
         }
     }
 
     // Create an output file handle to write the data to. If the user
     // did not specify an output file, use standard output.
-    let mut out: Box<dyn Write> = match o {
-        Some(o) => Box::new(create(o.to_path_buf())),
+    let mut out: Box<dyn Write> = match opt.out {
+        Some(o) => Box::new(create(o)),
         None => Box::new(std::io::stdout()),
     };
 
@@ -91,21 +75,15 @@ fn run() -> Result<(), Error> {
     // Read the data from the input file and write it to the output file.
     if let Err(e) = ingest.ingest_file(opt.input) {
         if out_file_exists {
-            match std::fs::write(o.unwrap(), &out_file_content) {
+            match std::fs::write(&opt.out.unwrap(), &out_file_content) {
                 Ok(_) => (),
                 Err(e) => panic!("couldn't restore existing file: {}", e),
-            };
-        } else if let Some(o) = o {
+            };            
+        } else if let Some(o) = &opt.out {
             match std::fs::remove_file(o) {
                 Ok(_) => (),
-                Err(e) => panic!("couldn't remove artifacts: {}", e),
+                Err(e) => panic!("couldn't remove artifact: {}", e),
             }            
-            for non_existing_dir in non_existing_directories {
-                match std::fs::remove_dir(non_existing_dir) {
-                    Ok(()) => (),
-                    Err(e) => panic!("couldn't remove artifacts: {}", e),
-                }                
-            }
         }
         return Err(e);
     }
