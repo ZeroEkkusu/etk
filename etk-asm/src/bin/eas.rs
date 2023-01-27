@@ -48,7 +48,8 @@ fn run() -> Result<(), Error> {
     let mut out_file_exists = false;
     let mut out_file_content = vec![];
     let mut non_existing_directories = vec![];
-    if let Some(o) = &opt.out {
+    let o = opt.out.as_ref();
+    if let Some(o) = o {
         if Path::new(o).exists() {
             out_file_exists = true;
             match std::fs::read(o) {
@@ -66,7 +67,7 @@ fn run() -> Result<(), Error> {
 
     // Create an output file handle to write the data to. If the user
     // did not specify an output file, use standard output.
-    let mut out: Box<dyn Write> = match opt.out {
+    let mut out: Box<dyn Write> = match o {
         Some(o) => Box::new(create(o)),
         None => Box::new(std::io::stdout()),
     };
@@ -82,11 +83,11 @@ fn run() -> Result<(), Error> {
     // Read the data from the input file and write it to the output file.
     if let Err(e) = ingest.ingest_file(opt.input) {
         if out_file_exists {
-            match std::fs::write(&opt.out.unwrap(), &out_file_content) {
+            match std::fs::write(o.unwrap(), &out_file_content) {
                 Ok(_) => (),
                 Err(e) => panic!("couldn't restore existing file: {}", e),
             };
-        } else if let Some(o) = &opt.out {
+        } else if let Some(o) = o {
             match std::fs::remove_file(o) {
                 Ok(_) => (),
                 Err(e) => panic!("couldn't remove artifacts: {}", e),
