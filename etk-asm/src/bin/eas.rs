@@ -3,7 +3,7 @@ use etk_cli::io::HexWrite;
 
 use etk_asm::ingest::{Error, Ingest};
 
-use std::fs::File;
+use std::fs::{create_dir_all, File};
 use std::io::prelude::*;
 use std::path::PathBuf;
 
