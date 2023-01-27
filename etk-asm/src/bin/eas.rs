@@ -60,7 +60,15 @@ fn run() -> Result<(), Error> {
             let mut path = Path::new(o);
             while !path.exists() {
                 non_existing_directories.push(path);
-                path = path.parent().unwrap();
+                let mut path = Path::new(o);
+                while !path.exists() {
+                    non_existing_directories.push(path);
+                    if let Some(p) = path.parent() {
+                        path = p;
+                    } else {
+                        break;
+                    }
+                }                
             }
         }
     }
