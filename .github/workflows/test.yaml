@@ -38,8 +38,8 @@ jobs:
       - name: run eas
         run: cargo run --features cli --bin eas input bx/x/output
       - name: check output
-        run: cat px/tx/output
+        run: cat bx/x/output
       - name: check parent dir
-        run: ls px/tx
+        run: ls bx/x
       - name: check grandparent dir
-        run: ls px
+        run: ls bx

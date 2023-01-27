@@ -59,10 +59,20 @@ fn run() -> Result<(), Error> {
     // Parse the command line arguments.
     let opt: Opt = clap::Parser::parse();
 
+    // Check if the output file already exists.
+    let mut out_file_exists = false;
+    let mut out_file_content = vec![];
+    if let Some(o) = &opt.out {
+        if Path::new(o).exists() {
+            out_file_exists = true;
+            out_file_content = std::fs::read(o)?;
+        }
+    }
+
     // Create an output file handle to write the data to. If the user
     // did not specify an output file, use standard output.
     let mut out: Box<dyn Write> = match opt.out {
-        Some(o) => Box::new(create(o)),
+        Some(o) => Box::new(create(o)?),
         None => Box::new(std::io::stdout()),
     };
 
@@ -75,7 +85,14 @@ fn run() -> Result<(), Error> {
     let mut ingest = Ingest::new(hex_out);
 
     // Read the data from the input file and write it to the output file.
-    ingest.ingest_file(opt.input)?;
+    if let Err(e) = ingest.ingest_file(opt.input) {
+        if out_file_exists {
+            std::fs::write(&opt.out.unwrap(), &out_file_content)?;
+        } else if let Some(o) = &opt.out {
+            std::fs::remove_file(o)?;
+        }
+        return Err(e);
+    }
 
     // Write a newline to the output file.
     out.write_all(b"\n").unwrap();
@@ -83,3 +100,4 @@ fn run() -> Result<(), Error> {
     // Exit the program successfully.
     Ok(())
 }
+
