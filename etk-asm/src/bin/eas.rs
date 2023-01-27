@@ -45,16 +45,6 @@ fn create(path: PathBuf) -> File {
 // This is the main function of the program. It calls run() and
 // prints the error message returned by run() if run() returns
 // an error. Otherwise, it exits the program.
-fn main() {
-    let err = match run() {
-        Ok(_) => return,
-        Err(e) => e,
-    };
-
-    eprintln!("{}", WithSources(err));
-    std::process::exit(1);
-}
-
 fn run() -> Result<(), Error> {
     // Parse the command line arguments.
     let opt: Opt = clap::Parser::parse();
@@ -62,10 +52,17 @@ fn run() -> Result<(), Error> {
     // Check if the output file already exists.
     let mut out_file_exists = false;
     let mut out_file_content = vec![];
+    let mut non_existing_directories = vec![];
     if let Some(o) = &opt.out {
         if Path::new(o).exists() {
             out_file_exists = true;
             out_file_content = std::fs::read(o)?;
+        } else {
+            let mut path = Path::new(o);
+            while !path.exists() {
+                non_existing_directories.push(path);
+                path = path.parent().unwrap();
+            }
         }
     }
 
@@ -90,6 +87,9 @@ fn run() -> Result<(), Error> {
             std::fs::write(&opt.out.unwrap(), &out_file_content)?;
         } else if let Some(o) = &opt.out {
             std::fs::remove_file(o)?;
+            for non_existing_dir in non_existing_directories {
+                std::fs::remove_dir(non_existing_dir)?;
+            }
         }
         return Err(e);
     }
@@ -100,4 +100,5 @@ fn run() -> Result<(), Error> {
     // Exit the program successfully.
     Ok(())
 }
+
 
