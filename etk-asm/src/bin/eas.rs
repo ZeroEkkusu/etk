@@ -83,38 +83,3 @@ fn run() -> Result<(), Error> {
     // Exit the program successfully.
     Ok(())
 }
-
-fn run() -> Result<(), Error> {
-    // Parse the command line arguments.
-    let opt: Opt = clap::Parser::parse();
-
-    // Create an Ingest object that will read the data from the input file
-    let mut ingest = Ingest::new(std::io::sink());
-
-    // Read the data from the input file 
-    ingest.ingest_file(opt.input)?;
-
-    // Create an output file handle to write the data to. If the user
-    // did not specify an output file, use standard output.
-    let mut out: Box<dyn Write> = match opt.out {
-        Some(o) => Box::new(create(o)),
-        None => Box::new(std::io::stdout()),
-    };
-
-    // Create a wrapper around the output file handle that will write
-    // hexadecimal data to it.
-    let hex_out = HexWrite::new(&mut out);
-
-    // Set the destination sink to the output file
-    ingest.set_sink(hex_out);
-
-    // Write the data to the output file
-    ingest.ingest_file(opt.input)?;
-
-    // Write a newline to the output file.
-    out.write_all(b"\n").unwrap();
-
-    // Exit the program successfully.
-    Ok(())
-}
-
